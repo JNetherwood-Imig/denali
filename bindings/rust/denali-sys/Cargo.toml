@@ -1,0 +1,9 @@
+[package]
+name = "denali-sys"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+
+[build-dependencies]
+cc = { version = "1.2.14", features = ["parallel"] }
