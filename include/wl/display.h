@@ -1,6 +1,6 @@
 #pragma once
 
-#include "display_common.h"
+#include "display_core.h"
 
 typedef void Display;
 

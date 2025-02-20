@@ -1,5 +1,4 @@
 #include "display_priv.h"
-#include "display_common.h"
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
