@@ -30,5 +30,5 @@ pub fn build(b: *std.Build) void {
     });
 
     mod.linkLibrary(lib);
-    mod.addIncludePath(b.path("include/dwl"));
+    mod.addIncludePath(b.path("include"));
 }
