@@ -52,7 +52,7 @@ Display* display_connect(DisplayError* err) {
                     break;
                 case ENFILE:
                 case EMFILE:
-                    *err = DISPLAY_ERROR_SOCKET_FD_LIMIT_REACED;
+                    *err = DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
                     break;
                 case ENOBUFS:
                 case ENOMEM:
