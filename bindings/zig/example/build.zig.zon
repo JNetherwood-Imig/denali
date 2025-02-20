@@ -1,0 +1,14 @@
+.{
+    .name = "better_wayland_example",
+    .version = "0.0.1",
+    .dependencies = .{
+        .better_wayland = .{
+            .path = "../../../",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "main.zig",
+    },
+}
