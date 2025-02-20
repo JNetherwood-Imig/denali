@@ -5,7 +5,7 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const lib = b.addStaticLibrary(.{
-        .name = "better_wayland_c",
+        .name = "denali_c",
         .target = target,
         .optimize = optimize,
         .link_libc = true,
@@ -23,12 +23,12 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(b.path("include"));
     lib.addIncludePath(b.path("include/wl"));
 
-    const mod = b.addModule("better-wayland", .{
+    const mod = b.addModule("denali", .{
         .root_source_file = b.path("bindings/zig/src/root.zig"),
         .target = target,
         .optimize = optimize,
     });
 
     mod.linkLibrary(lib);
-    mod.addIncludePath(b.path("include/wl"));
+    mod.addIncludePath(b.path("include/dwl"));
 }

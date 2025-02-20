@@ -1,4 +1,5 @@
 #include "display_priv.h"
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,13 +7,13 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-void display_disconnect(Display* display);
+void dwl_display_disconnect(DwlDisplay* display);
 
-Display* display_connect(DisplayError* err) {
+DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     if (err) {
-        *err = DISPLAY_ERROR_NONE;
+        *err = DWL_DISPLAY_ERROR_NONE;
     }
-    Display* display = malloc(sizeof(*display));
+    DwlDisplay* display = malloc(sizeof(*display));
 
     const char* wayland_sock = getenv("WAYLAND_SOCK");
     if (wayland_sock) {
@@ -27,7 +28,7 @@ Display* display_connect(DisplayError* err) {
     const char* xdg_runtime_dir = getenv("XDG_RUNTIME_DIR");
     if (!xdg_runtime_dir) {
         if (err) {
-            *err = DISPLAY_ERROR_NO_XDG_RUNTIME_DIR;
+            *err = DWL_DISPLAY_ERROR_NO_XDG_RUNTIME_DIR;
         }
         goto err;
     }
@@ -48,18 +49,18 @@ Display* display_connect(DisplayError* err) {
         if (err) {
             switch (errno) {
                 case EACCES:
-                    *err = DISPLAY_ERROR_SOCKET_PERMISSION_DENIED;
+                    *err = DWL_DISPLAY_ERROR_SOCKET_PERMISSION_DENIED;
                     break;
                 case ENFILE:
                 case EMFILE:
-                    *err = DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
+                    *err = DWL_DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
                     break;
                 case ENOBUFS:
                 case ENOMEM:
-                    *err = DISPLAY_ERROR_SOCKET_NO_MEM;
+                    *err = DWL_DISPLAY_ERROR_SOCKET_NO_MEM;
                     break;
                 default:
-                    *err = DISPLAY_ERROR_UNKNOWN;
+                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
                     break;
             }
         }
@@ -70,16 +71,16 @@ Display* display_connect(DisplayError* err) {
         if (err) {
             switch (errno) {
                 case EACCES:
-                    *err = DISPLAY_ERROR_CONNECT_PERMISSION_DENIED;
+                    *err = DWL_DISPLAY_ERROR_CONNECT_PERMISSION_DENIED;
                     break;
                 case EAGAIN:
-                    *err = DISPLAY_ERROR_CONNECT_WOULD_BLOCK;
+                    *err = DWL_DISPLAY_ERROR_CONNECT_WOULD_BLOCK;
                     break;
                 case ECONNREFUSED:
-                    *err = DISPLAY_ERROR_CONNECT_REFUSED;
+                    *err = DWL_DISPLAY_ERROR_CONNECT_REFUSED;
                     break;
                 default:
-                    *err = DISPLAY_ERROR_UNKNOWN;
+                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
                     break;
             }
         }
@@ -89,11 +90,11 @@ Display* display_connect(DisplayError* err) {
     return display;
 
 err:
-    display_disconnect(display);
+    dwl_display_disconnect(display);
     return nullptr;
 }
 
-void display_disconnect(Display* display) {
+void dwl_display_disconnect(DwlDisplay* display) {
     if (!display)
         return;
 

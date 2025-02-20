@@ -5,18 +5,18 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const exe = b.addExecutable(.{
-        .name = "better_wayland_example",
+        .name = "example",
         .target = target,
         .optimize = optimize,
         .root_source_file = b.path("main.zig"),
     });
 
-    const wl = b.dependency("better_wayland", .{
+    const wl = b.dependency("denali", .{
         .target = target,
         .optimize = optimize,
     });
 
-    exe.root_module.addImport("wl", wl.module("better-wayland"));
+    exe.root_module.addImport("dwl", wl.module("denali"));
 
     b.installArtifact(exe);
 }

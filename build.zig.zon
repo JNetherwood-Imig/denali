@@ -1,5 +1,5 @@
 .{
-    .name = "better_wayland",
+    .name = "denali",
     .version = "0.0.1",
     .dependencies = .{},
     .paths = .{

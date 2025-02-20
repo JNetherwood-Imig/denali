@@ -1,8 +1,8 @@
 .{
-    .name = "better_wayland_example",
+    .name = "denali_example",
     .version = "0.0.1",
     .dependencies = .{
-        .better_wayland = .{
+        .denali = .{
             .path = "../../../",
         },
     },

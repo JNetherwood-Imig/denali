@@ -1,1 +1,1 @@
-wl_srcs += files('display.c')
+denali_srcs += files('display.c')

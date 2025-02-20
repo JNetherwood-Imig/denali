@@ -1,9 +1,8 @@
 #pragma once
 
 #include "defines.h"
+#include "dwl/display_core.h"
 
-typedef struct Display {
+typedef struct DwlDisplay {
     i32 sockfd;
-} Display;
-
-#include "display_core.h"
+} DwlDisplay;

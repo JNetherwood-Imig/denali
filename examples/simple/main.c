@@ -1,9 +1,9 @@
-#include "display.h"
+#include "dwl/display.h"
 
 #include <stdio.h>
 
 int main(void) {
-  Display* display = display_connect(nullptr);
+  DwlDisplay* display = dwl_display_connect(nullptr);
   if (!display) {
     printf("Error connecting to display!\n");
     return -1;  
@@ -11,5 +11,5 @@ int main(void) {
   
   printf("Connected!\n");
 
-  display_disconnect(display);
+  dwl_display_disconnect(display);
 }

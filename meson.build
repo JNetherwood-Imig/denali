@@ -1,5 +1,5 @@
 project(
-  'better_wayland',
+  'denali',
   'c',
   version: '0.0.1',
   default_options: [
@@ -8,15 +8,14 @@ project(
   ]
 )
 
-wl_srcs = files()
+denali_srcs = files()
 
 subdir('src')
 
-wl_priv_includes = include_directories('include')
-wl_pub_includes = include_directories('include/wl')
+denali_includes = include_directories('include')
 
-lib = shared_library('wl', sources: wl_srcs, include_directories: [wl_priv_includes, wl_pub_includes])
+denali_lib = shared_library('denali', sources: denali_srcs, include_directories: denali_includes)
 
-wl_dep = declare_dependency(link_with: lib, include_directories: wl_pub_includes)
+denali_dep = declare_dependency(link_with: denali_lib, include_directories: denali_includes)
 
 subdir('examples')
