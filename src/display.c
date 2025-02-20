@@ -38,30 +38,29 @@ DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
         wayland_display = "wayland-0";
 
     if (wayland_display[0] == '/')
-        snprintf(addr.sun_path, sizeof(addr.sun_path),
-                 "%s", wayland_display);
+        snprintf(addr.sun_path, sizeof(addr.sun_path), "%s", wayland_display);
     else
-        snprintf(addr.sun_path, sizeof(addr.sun_path),
-                 "%s/%s", xdg_runtime_dir, wayland_display);
+        snprintf(addr.sun_path, sizeof(addr.sun_path), "%s/%s", xdg_runtime_dir,
+                 wayland_display);
 
     display->sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (display->sockfd < 0) {
         if (err) {
             switch (errno) {
-                case EACCES:
-                    *err = DWL_DISPLAY_ERROR_SOCKET_PERMISSION_DENIED;
-                    break;
-                case ENFILE:
-                case EMFILE:
-                    *err = DWL_DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
-                    break;
-                case ENOBUFS:
-                case ENOMEM:
-                    *err = DWL_DISPLAY_ERROR_SOCKET_NO_MEM;
-                    break;
-                default:
-                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
-                    break;
+            case EACCES:
+                *err = DWL_DISPLAY_ERROR_SOCKET_PERMISSION_DENIED;
+                break;
+            case ENFILE:
+            case EMFILE:
+                *err = DWL_DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
+                break;
+            case ENOBUFS:
+            case ENOMEM:
+                *err = DWL_DISPLAY_ERROR_SOCKET_NO_MEM;
+                break;
+            default:
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
+                break;
             }
         }
         goto err;
@@ -70,18 +69,18 @@ DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     if (connect(display->sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
         if (err) {
             switch (errno) {
-                case EACCES:
-                    *err = DWL_DISPLAY_ERROR_CONNECT_PERMISSION_DENIED;
-                    break;
-                case EAGAIN:
-                    *err = DWL_DISPLAY_ERROR_CONNECT_WOULD_BLOCK;
-                    break;
-                case ECONNREFUSED:
-                    *err = DWL_DISPLAY_ERROR_CONNECT_REFUSED;
-                    break;
-                default:
-                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
-                    break;
+            case EACCES:
+                *err = DWL_DISPLAY_ERROR_CONNECT_PERMISSION_DENIED;
+                break;
+            case EAGAIN:
+                *err = DWL_DISPLAY_ERROR_CONNECT_WOULD_BLOCK;
+                break;
+            case ECONNREFUSED:
+                *err = DWL_DISPLAY_ERROR_CONNECT_REFUSED;
+                break;
+            default:
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
+                break;
             }
         }
         goto err;
