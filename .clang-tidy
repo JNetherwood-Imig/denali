@@ -1,0 +1,3 @@
+WarningsAsErrors: "*"
+Checks:
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling

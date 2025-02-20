@@ -10,10 +10,10 @@
 void dwl_display_disconnect(DwlDisplay* display);
 
 DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
-    if (err) {
-        *err = DWL_DISPLAY_ERROR_NONE;
-    }
     DwlDisplay* display = malloc(sizeof(*display));
+    *display = (DwlDisplay){
+        .sockfd = -1,
+    };
 
     const char* wayland_sock = getenv("WAYLAND_SOCK");
     if (wayland_sock) {
