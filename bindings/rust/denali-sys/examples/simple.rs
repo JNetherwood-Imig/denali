@@ -1,12 +1,11 @@
 fn main() {
-    let display = dwl_display_connect(nullptr);
-    if (!display) {
-      printf("Error connecting to display!\n");
-      return -1;  
+    unsafe {
+      let display = denali_sys::dwl_display_connect(std::ptr::null_mut());
+      if display.is_null() {
+        eprintln!("Failed to connect to display");
+        return;
+      }
+
+      denali_sys::dwl_display_disconnect(display);
     }
-    
-    printf("Connected!\n");
-  
-    dwl_display_disconnect(display);
-  }
-  
+}

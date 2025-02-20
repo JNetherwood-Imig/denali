@@ -1,5 +1,9 @@
+# Build directories
 build/
 .cache/
 target/
 zig-out/
 .zig-cache/
+
+# Direnv
+.direnv/
