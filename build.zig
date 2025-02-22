@@ -14,6 +14,7 @@ pub fn build(b: *std.Build) void {
     lib.addCSourceFiles(.{
         .files = &.{
             "src/display.c",
+            "src/message.c",
         },
         .flags = &.{
             "-std=c23",
