@@ -1,5 +1,7 @@
 #pragma once
 
+#define ROUNDUP_4(val) (((val) + 3) & ~3)
+
 typedef signed char i8;
 typedef signed short i16;
 typedef signed int i32;

@@ -3,36 +3,15 @@
 #include "dwl/protocol.h"
 #include "message.h"
 
-static const MessageSignature display_request_sync = {
-    DWL_DISPLAY_REQUEST_SYNC,
-    {
-        MESSAGE_ARG_TYPE_OBJECT,
-        MESSAGE_ARG_TYPE_MAX_ENUM,
-    },
-};
+#define DISPLAY_SYNC_SIGNATURE "n"
+#define DISPLAY_GET_REGISTRY_SIGNATURE "n"
+#define DISPLAY_ERROR_SIGNATURE "ous"
+#define DISPLAY_DELETE_ID_SIGNATURE "u"
 
-static const MessageSignature display_request_get_registry = {
-    DWL_DISPLAY_REQUEST_GET_REGISTRY,
-    {
-        MESSAGE_ARG_TYPE_NEW_ID,
-        MESSAGE_ARG_TYPE_MAX_ENUM,
-    },
-};
+static inline Message* display_sync_message(ID callback) {
+    return message_new(DWL_DISPLAY_OBJECT_ID, DWL_DISPLAY_REQUEST_SYNC, DISPLAY_SYNC_SIGNATURE, callback);
+}
 
-static const MessageSignature display_event_error = {
-    DWL_DISPLAY_EVENT_ERROR,
-    {
-        MESSAGE_ARG_TYPE_OBJECT,
-        MESSAGE_ARG_TYPE_UINT,
-        MESSAGE_ARG_TYPE_STRING,
-        MESSAGE_ARG_TYPE_MAX_ENUM,
-    },
-};
-
-static const MessageSignature display_event_delete_id = {
-    DWL_DISPLAY_EVENT_DELETE_ID,
-    {
-        MESSAGE_ARG_TYPE_UINT,
-        MESSAGE_ARG_TYPE_MAX_ENUM,
-    },
-};
+static inline Message* display_get_registry_message(ID registry) {
+    return message_new(DWL_DISPLAY_OBJECT_ID, DWL_DISPLAY_REQUEST_GET_REGISTRY, DISPLAY_GET_REGISTRY_SIGNATURE, registry);
+}

@@ -1,6 +1,8 @@
 #include "dwl/defines.h"
 #include "dwl/display_core.h"
 #include "dwl/protocol.h"
+#include "message.h"
+#include "message_protocol.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -11,37 +13,20 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-typedef Object Registry;
+typedef Object DwlRegistry;
 
 typedef struct DwlDisplay {
     Object parent;
+
+    DwlRegistry registry;
 
     u32 next_id;
 
     i32 sockfd;
     i32 epoll_fd;
-
-    u8* buf;
-    u8* buf_ptr;
-    usize buf_capacity;
 } DwlDisplay;
 
-static DwlDisplay* display_create(DwlDisplayResult* err) {
-    DwlDisplay* display = malloc(sizeof(*display));
-    *display = (DwlDisplay){
-        .parent.id = DWL_DISPLAY_OBJECT_ID,
-        .next_id = DWL_DISPLAY_OBJECT_ID + 1,
-        .sockfd = -1,
-    };
-
-    // Connect to existing socket
-    const char* wayland_sock = getenv("WAYLAND_SOCK");
-    if (wayland_sock) {
-        display->sockfd = strtol(wayland_sock, nullptr, 10);
-        goto setup_epoll;
-    }
-
-    // Create socket
+static i32 create_socket(DwlDisplayResult* err) {
     struct sockaddr_un addr = {
         .sun_family = AF_UNIX,
     };
@@ -51,7 +36,7 @@ static DwlDisplay* display_create(DwlDisplayResult* err) {
         if (err) {
             *err = DWL_DISPLAY_RESULT_NO_XDG_RUNTIME_DIR;
         }
-        goto err;
+        return -1;
     }
 
     const char* wayland_display = getenv("WAYLAND_DISPLAY");
@@ -64,8 +49,8 @@ static DwlDisplay* display_create(DwlDisplayResult* err) {
         snprintf(addr.sun_path, sizeof(addr.sun_path), "%s/%s", xdg_runtime_dir,
                  wayland_display);
 
-    display->sockfd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
-    if (display->sockfd < 0) {
+    i32 sockfd = socket(AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
+    if (sockfd < 0) {
         if (err) {
             switch (errno) {
             case EACCES:
@@ -84,10 +69,10 @@ static DwlDisplay* display_create(DwlDisplayResult* err) {
                 break;
             }
         }
-        goto err;
+        return -1;
     }
 
-    if (connect(display->sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
+    if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) != 0) {
         if (err) {
             switch (errno) {
             case EACCES:
@@ -104,13 +89,16 @@ static DwlDisplay* display_create(DwlDisplayResult* err) {
                 break;
             }
         }
-        goto err_sock;
+        close(sockfd);
+        return -1;
     }
 
-    // Setup epoll
-setup_epoll:
+    return sockfd;
+}
 
-    if ((display->epoll_fd = epoll_create1(0)) < 0) {
+static i32 setup_epoll(const i32 display_fd, DwlDisplayResult* err) {
+    i32 fd = epoll_create1(0);
+    if (fd < 0) {
         if (err) {
             switch (errno) {
             case EMFILE:
@@ -125,27 +113,103 @@ setup_epoll:
                 break;
             }
         }
-        goto err_sock;
+        return -1;
     }
 
-    epoll_ctl(
-        display->epoll_fd, EPOLL_CTL_ADD, display->sockfd,
-        &(struct epoll_event){.events = EPOLLIN, .data.fd = display->sockfd});
+    if (epoll_ctl(
+        fd, EPOLL_CTL_ADD, display_fd,
+        &(struct epoll_event){.events = EPOLLIN, .data.fd = display_fd}) != 0) {
+        if (err) {
+            switch (errno) {
+                case ENOMEM:
+                    *err = DWL_DISPLAY_RESULT_EPOLL_NO_MEM;
+                    break;
+                case EPERM:
+                    *err = DWL_DISPLAY_RESULT_EPOLL_PERMISSION_DENIED;
+                    break;
+                default:
+                    *err = DWL_DISPLAY_RESULT_UNKNOWN;
+                    break;
+            }
 
-    display->buf_capacity = 4096;
-    display->buf = malloc(display->buf_capacity);
-    display->buf_ptr = display->buf;
+            close(fd);
+            return -1;
+        }
+    }
+
+    return fd;
+}
+
+static void display_send_message(DwlDisplay* display, Message* message) {
+    const usize bytes_written = write(display->sockfd, message->buf, message->head.length);
+    assert(bytes_written == message->head.length);
+}
+
+static bool display_get_registry(DwlDisplay* display, DwlDisplayResult* err) {
+    (void)err;
+    display->registry.id = display->next_id++;
+    Message* msg = display_get_registry_message(display->registry.id);
+    display_send_message(display, msg);
+    message_destroy(msg);
+
+    return true;
+}
+
+DwlDisplay* dwl_display_connect(DwlDisplayResult* err) {
+    DwlDisplay* display = malloc(sizeof(*display));
+    display->parent.id = DWL_DISPLAY_OBJECT_ID;
+    display->next_id = DWL_DISPLAY_OBJECT_ID + 1;
+
+    const char* wayland_sock = getenv("WAYLAND_SOCK");
+    char* endp = nullptr;
+    display->sockfd = wayland_sock ? strtol(wayland_sock, &endp, 10) : create_socket(err);
+    if (display->sockfd < 0 || endp != 0)
+        goto err_sock;
+
+    display->epoll_fd = setup_epoll(display->sockfd, err);
+    if (display->epoll_fd < 0)
+        goto err_epoll;
+
+    if (!display_get_registry(display, err))
+        goto err_registry;
+
+    // REMOVE: TEMP
+    {
+        struct epoll_event events[32];
+        epoll_wait(display->epoll_fd, events, 32, -1);
+        char buf[4096];
+        isize bytes_read = read(display->sockfd, buf, sizeof(buf));
+        printf("Read %zi bytes from display sock\n", bytes_read);
+
+        char* ptr = buf;
+        while (ptr + 8 < buf + bytes_read) {
+            const MessageHeader h = *(MessageHeader*)ptr;
+            ptr += sizeof(MessageHeader);
+            const u32 name = *(u32*)ptr;
+            ptr += sizeof(u32);
+            const u32 iface_len = *(u32*)ptr;
+            ptr += sizeof(u32);
+            const char* iface = ptr;
+            ptr += ROUNDUP_4(iface_len);
+            const u32 version = *(u32*)ptr;
+            ptr += sizeof(u32);
+
+            printf("wl_registry::global\n\tName: %u, Interface: %s (Version %u)\n", name, iface, version);
+        }
+    }
 
     return display;
 
-err_sock:
+err_registry:
+    close(display->epoll_fd);
+err_epoll:
     close(display->sockfd);
-err:
+err_sock:
     free(display);
     return nullptr;
 }
 
-static void display_destroy(DwlDisplay* display) {
+void dwl_display_disconnect(DwlDisplay* display) {
     if (display->epoll_fd > 0)
         close(display->epoll_fd);
 
@@ -153,28 +217,4 @@ static void display_destroy(DwlDisplay* display) {
         close(display->sockfd);
 
     free(display);
-}
-
-static bool display_get_registry(DwlDisplay* display, DwlDisplayResult* err) {
-    (void)display;
-    (void)err;
-    return true;
-}
-
-DwlDisplay* dwl_display_connect(DwlDisplayResult* err) {
-    DwlDisplay* display;
-
-    if (!(display = display_create(err)))
-        return nullptr;
-
-    if (!display_get_registry(display, err)) {
-        display_destroy(display);
-        return nullptr;
-    }
-
-    return display;
-}
-
-void dwl_display_disconnect(DwlDisplay* display) {
-    display_destroy(display);
 }

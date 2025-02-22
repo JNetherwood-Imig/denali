@@ -2,8 +2,10 @@
 
 #include "dwl/defines.h"
 
+typedef u32 ID;
+
 typedef struct Object {
-    u32 id;
+    ID id;
 } Object;
 
 #define DWL_INVALID_OBJECT_ID 0U
