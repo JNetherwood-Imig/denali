@@ -1,7 +1,7 @@
 #[repr(C)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct DwlDisplay {
-    sockfd: i32
+    sockfd: i32,
 }
 
 #[repr(transparent)]
@@ -18,11 +18,10 @@ impl DwlDisplayError {
     pub const DWL_DISPLAY_RESULT_EPOLL_FD_LIMIT_REACHED: Self = Self(7);
     pub const DWL_DISPLAY_RESULT_EPOLL_NO_MEM: Self = Self(8);
     pub const DWL_DISPLAY_RESULT_UNKNOWN: Self = Self(9);
-    pub const DWL_DISPLAY_RESULT_MAX_ENUM: Self = Self(10);
 }
 
 #[link(name = "denali")]
 extern "C" {
     pub fn dwl_display_disconnect(display: *mut DwlDisplay);
-    pub fn dwl_display_connect(out_error: *mut DwlDisplayError) -> *mut DwlDisplay; 
+    pub fn dwl_display_connect(out_error: *mut DwlDisplayError) -> *mut DwlDisplay;
 }
