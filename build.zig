@@ -23,7 +23,7 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(b.path("include"));
     lib.addIncludePath(b.path("include/wl"));
 
-    const mod = b.addModule("denali", .{
+    const mod = b.addModule("root", .{
         .root_source_file = b.path("bindings/zig/src/root.zig"),
         .target = target,
         .optimize = optimize,

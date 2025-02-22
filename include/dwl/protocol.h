@@ -1,0 +1,38 @@
+#pragma once
+
+#include "dwl/defines.h"
+
+typedef struct Object {
+    u32 id;
+} Object;
+
+#define DWL_INVALID_OBJECT_ID 0U
+
+#define DWL_DISPLAY_OBJECT_ID 1U
+
+// wl_display
+
+#define DWL_DISPLAY_REQUEST_SYNC 0U
+#define DWL_DISPLAY_REQUEST_GET_REGISTRY 1U
+
+#define DWL_DISPLAY_EVENT_ERROR 0U
+#define DWL_DISPLAY_EVENT_DELETE_ID 1U
+
+typedef enum DwlDisplayError {
+    DWL_DISPLAY_ERROR_INVALID_OBJECT,
+    DWL_DISPLAY_ERROR_INVALID_METHOD,
+    DWL_DISPLAY_ERROR_NO_MEMORY,
+    DWL_DISPLAY_ERROR_IMPLEMENTATION,
+} DwlDisplayError;
+
+// wl_registry
+
+#define DWL_REGISTRY_REQUEST_BIND 0U
+
+#define DWL_REGISTRY_EVENT_GLOBAL 0U
+#define DWL_REGISTRY_EVENT_GLOBAL_REMOVE 1U
+
+// wl_compositor
+
+#define DWL_COMPOSITOR_REQUEST_CREATE_SURFACE 0U
+#define DWL_COMPOSITOR_REQUEST_CREATE_REGION 1U

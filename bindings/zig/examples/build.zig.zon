@@ -1,5 +1,5 @@
 .{
-    .name = "denali_example",
+    .name = "denali_examples",
     .version = "0.0.1",
     .dependencies = .{
         .denali = .{
@@ -9,6 +9,6 @@
     .paths = .{
         "build.zig",
         "build.zig.zon",
-        "main.zig",
+        "simple.zig",
     },
 }
