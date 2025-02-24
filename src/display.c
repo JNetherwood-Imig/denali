@@ -27,7 +27,7 @@ typedef struct DwlDisplay {
     i32 epoll_fd;
 } DwlDisplay;
 
-static i32 create_socket(DwlDisplayResult* err) {
+static i32 create_socket(DwlDisplayError* err) {
     struct sockaddr_un addr = {
         .sun_family = AF_UNIX,
     };
@@ -35,7 +35,7 @@ static i32 create_socket(DwlDisplayResult* err) {
     const char* xdg_runtime_dir = getenv("XDG_RUNTIME_DIR");
     if (!xdg_runtime_dir) {
         if (err) {
-            *err = DWL_DISPLAY_RESULT_NO_XDG_RUNTIME_DIR;
+            *err = DWL_DISPLAY_ERROR_NO_XDG_RUNTIME_DIR;
         }
         return -1;
     }
@@ -55,18 +55,18 @@ static i32 create_socket(DwlDisplayResult* err) {
         if (err) {
             switch (errno) {
             case EACCES:
-                *err = DWL_DISPLAY_RESULT_SOCKET_PERMISSION_DENIED;
+                *err = DWL_DISPLAY_ERROR_SOCKET_PERMISSION_DENIED;
                 break;
             case ENFILE:
             case EMFILE:
-                *err = DWL_DISPLAY_RESULT_SOCKET_FD_LIMIT_REACHED;
+                *err = DWL_DISPLAY_ERROR_SOCKET_FD_LIMIT_REACHED;
                 break;
             case ENOBUFS:
             case ENOMEM:
-                *err = DWL_DISPLAY_RESULT_SOCKET_NO_MEM;
+                *err = DWL_DISPLAY_ERROR_SOCKET_NO_MEM;
                 break;
             default:
-                *err = DWL_DISPLAY_RESULT_UNKNOWN;
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
                 break;
             }
         }
@@ -77,16 +77,16 @@ static i32 create_socket(DwlDisplayResult* err) {
         if (err) {
             switch (errno) {
             case EACCES:
-                *err = DWL_DISPLAY_RESULT_CONNECT_PERMISSION_DENIED;
+                *err = DWL_DISPLAY_ERROR_CONNECT_PERMISSION_DENIED;
                 break;
             case EAGAIN:
-                *err = DWL_DISPLAY_RESULT_CONNECT_WOULD_BLOCK;
+                *err = DWL_DISPLAY_ERROR_CONNECT_WOULD_BLOCK;
                 break;
             case ECONNREFUSED:
-                *err = DWL_DISPLAY_RESULT_CONNECT_REFUSED;
+                *err = DWL_DISPLAY_ERROR_CONNECT_REFUSED;
                 break;
             default:
-                *err = DWL_DISPLAY_RESULT_UNKNOWN;
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
                 break;
             }
         }
@@ -97,20 +97,20 @@ static i32 create_socket(DwlDisplayResult* err) {
     return sockfd;
 }
 
-static i32 setup_epoll(const i32 display_fd, DwlDisplayResult* err) {
+static i32 setup_epoll(const i32 display_fd, DwlDisplayError* err) {
     i32 fd = epoll_create1(0);
     if (fd < 0) {
         if (err) {
             switch (errno) {
             case EMFILE:
             case ENFILE:
-                *err = DWL_DISPLAY_RESULT_EPOLL_FD_LIMIT_REACHED;
+                *err = DWL_DISPLAY_ERROR_EPOLL_FD_LIMIT_REACHED;
                 break;
             case ENOMEM:
-                *err = DWL_DISPLAY_RESULT_EPOLL_NO_MEM;
+                *err = DWL_DISPLAY_ERROR_EPOLL_NO_MEM;
                 break;
             default:
-                *err = DWL_DISPLAY_RESULT_UNKNOWN;
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
                 break;
             }
         }
@@ -123,13 +123,13 @@ static i32 setup_epoll(const i32 display_fd, DwlDisplayResult* err) {
         if (err) {
             switch (errno) {
                 case ENOMEM:
-                    *err = DWL_DISPLAY_RESULT_EPOLL_NO_MEM;
+                    *err = DWL_DISPLAY_ERROR_EPOLL_NO_MEM;
                     break;
                 case EPERM:
-                    *err = DWL_DISPLAY_RESULT_EPOLL_PERMISSION_DENIED;
+                    *err = DWL_DISPLAY_ERROR_EPOLL_PERMISSION_DENIED;
                     break;
                 default:
-                    *err = DWL_DISPLAY_RESULT_UNKNOWN;
+                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
                     break;
             }
 
@@ -247,7 +247,7 @@ static Message read_message(DwlDisplay* display) {
     return m;
 }
 
-static bool get_registry(DwlDisplay* display, DwlDisplayResult* err) {
+static bool get_registry(DwlDisplay* display, DwlDisplayError* err) {
     (void)err;
     display->registry.id = display->next_id++;
 
@@ -258,7 +258,7 @@ static bool get_registry(DwlDisplay* display, DwlDisplayResult* err) {
     return true;
 }
 
-DwlDisplay* dwl_display_connect(DwlDisplayResult* err) {
+DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     DwlDisplay* display = malloc(sizeof(*display));
     display->parent.id = WL_DISPLAY_OBJECT_ID;
     display->next_id = WL_DISPLAY_OBJECT_ID + 1;
