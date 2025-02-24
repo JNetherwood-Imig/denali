@@ -16,3 +16,5 @@ typedef unsigned long usize;
 
 typedef float f32;
 typedef double f64;
+
+typedef i32 fixed_t;

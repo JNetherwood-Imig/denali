@@ -26,6 +26,10 @@ typedef struct Message {
     u8* ptr;
 } Message;
 
-Message* message_new(u32 obj_id, u16 opcode, const char* const signature, ...);
+void message_destroy(Message* m);
 
-void message_destroy(Message* message);
+i32 message_read_i32(Message* m);
+
+u32 message_read_u32(Message* m);
+
+const char* message_read_str(Message* m);

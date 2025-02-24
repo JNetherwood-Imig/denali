@@ -1,0 +1,44 @@
+#pragma once
+
+#include "dwl/defines.h"
+
+typedef u32 ID;
+
+typedef struct Object {
+    ID id;
+} Object;
+
+#define WL_INVALID_OBJECT_ID 0U
+#define WL_DISPLAY_OBJECT_ID 1U
+
+// wl_display
+
+#define WL_DISPLAY_REQUEST_SYNC 0U
+#define WL_DISPLAY_REQUEST_GET_REGISTRY 1U
+
+#define WL_DISPLAY_EVENT_ERROR 0U
+#define WL_DISPLAY_EVENT_DELETE_ID 1U
+
+typedef enum WlDisplayError {
+    WL_DISPLAY_ERROR_INVALID_OBJECT,
+    WL_DISPLAY_ERROR_INVALID_METHOD,
+    WL_DISPLAY_ERROR_NO_MEMORY,
+    WL_DISPLAY_ERROR_IMPLEMENTATION,
+} WlDisplayError;
+
+#define WL_DISPLAY_SYNC_SIGNATURE "n"
+#define WL_DISPLAY_GET_REGISTRY_SIGNATURE "n"
+#define WL_DISPLAY_ERROR_SIGNATURE "ous"
+#define WL_DISPLAY_DELETE_ID_SIGNATURE "u"
+
+// wl_registry
+
+#define WL_REGISTRY_REQUEST_BIND 0U
+
+#define WL_REGISTRY_EVENT_GLOBAL 0U
+#define WL_REGISTRY_EVENT_GLOBAL_REMOVE 1U
+
+// wl_compositor
+
+#define WL_COMPOSITOR_REQUEST_CREATE_SURFACE 0U
+#define WL_COMPOSITOR_REQUEST_CREATE_REGION 1U
