@@ -3,7 +3,7 @@ project(
   'c',
   version: '0.0.1',
   default_options: [
-    'c_std=c23',
+    'c_std=gnu2x',
     'warning_level=2'
   ]
 )

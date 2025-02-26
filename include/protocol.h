@@ -4,10 +4,6 @@
 
 typedef u32 ID;
 
-typedef struct Object {
-    ID id;
-} Object;
-
 #define WL_INVALID_OBJECT_ID 0U
 #define WL_DISPLAY_OBJECT_ID 1U
 
@@ -38,7 +34,11 @@ typedef enum WlDisplayError {
 #define WL_REGISTRY_EVENT_GLOBAL 0U
 #define WL_REGISTRY_EVENT_GLOBAL_REMOVE 1U
 
+#define WL_REGISTRY_BIND_SIGNATURE "usun"
+
 // wl_compositor
 
 #define WL_COMPOSITOR_REQUEST_CREATE_SURFACE 0U
 #define WL_COMPOSITOR_REQUEST_CREATE_REGION 1U
+
+#define WL_COMPOSITOR_CREATE_SURFACE_SIGNATURE "n"

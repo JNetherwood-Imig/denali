@@ -1,6 +1,8 @@
 #pragma once
 
-#define ROUNDUP_4(val) (((val) + 3) & ~3)
+#define field_parent_ptr(ptr, T, field) ((T*)((u8*)(ptr) - offsetof(T, field)))
+
+#define roundup_4(val) (((val) + 3) & ~3)
 
 typedef signed char i8;
 typedef signed short i16;

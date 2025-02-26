@@ -1,6 +1,4 @@
-#include "dwl/defines.h"
-#include "dwl/display_core.h"
-#include "protocol.h"
+#include "display_priv.h"
 #include "message.h"
 
 #include <assert.h>
@@ -13,19 +11,6 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
-
-typedef Object DwlRegistry;
-
-typedef struct DwlDisplay {
-    Object parent;
-
-    DwlRegistry registry;
-
-    u32 next_id;
-
-    i32 sockfd;
-    i32 epoll_fd;
-} DwlDisplay;
 
 static i32 create_socket(DwlDisplayError* err) {
     struct sockaddr_un addr = {
@@ -117,20 +102,20 @@ static i32 setup_epoll(const i32 display_fd, DwlDisplayError* err) {
         return -1;
     }
 
-    if (epoll_ctl(
-        fd, EPOLL_CTL_ADD, display_fd,
-        &(struct epoll_event){.events = EPOLLIN, .data.fd = display_fd}) != 0) {
+    if (epoll_ctl(fd, EPOLL_CTL_ADD, display_fd,
+                  &(struct epoll_event){.events = EPOLLIN, .data.fd = display_fd}) !=
+        0) {
         if (err) {
             switch (errno) {
-                case ENOMEM:
-                    *err = DWL_DISPLAY_ERROR_EPOLL_NO_MEM;
-                    break;
-                case EPERM:
-                    *err = DWL_DISPLAY_ERROR_EPOLL_PERMISSION_DENIED;
-                    break;
-                default:
-                    *err = DWL_DISPLAY_ERROR_UNKNOWN;
-                    break;
+            case ENOMEM:
+                *err = DWL_DISPLAY_ERROR_EPOLL_NO_MEM;
+                break;
+            case EPERM:
+                *err = DWL_DISPLAY_ERROR_EPOLL_PERMISSION_DENIED;
+                break;
+            default:
+                *err = DWL_DISPLAY_ERROR_UNKNOWN;
+                break;
             }
 
             close(fd);
@@ -141,12 +126,12 @@ static i32 setup_epoll(const i32 display_fd, DwlDisplayError* err) {
     return fd;
 }
 
-static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const char* signature, ...) {
-
+void display_send_message(DwlDisplay* display, ID id, u16 opcode,
+                          const char* signature, ...) {
     Message message = {};
     message.head = (MessageHeader){
         .length = sizeof(MessageHeader),
-        .obj_id = obj->id,
+        .obj_id = id,
         .opcode = opcode,
     };
 
@@ -154,7 +139,7 @@ static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const cha
 
     va_list argp;
 
-    va_start(argp);    
+    va_start(argp);
     for (usize i = 0; i < arg_count; i++) {
         switch (signature[i]) {
         case MESSAGE_ARG_TYPE_INT:
@@ -169,10 +154,10 @@ static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const cha
         case MESSAGE_ARG_TYPE_STRING:
             message.head.length += sizeof(u32);
             const char* const str = va_arg(argp, const char* const);
-            message.head.length += ROUNDUP_4(strlen(str) + 1);
+            message.head.length += roundup_4(strlen(str) + 1);
             break;
         case MESSAGE_ARG_TYPE_ARRAY:
-            message.head.length += ROUNDUP_4(va_arg(argp, u32));
+            message.head.length += roundup_4(va_arg(argp, u32));
             va_arg(argp, const void* const);
             break;
         case MESSAGE_ARG_TYPE_FD:
@@ -204,7 +189,7 @@ static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const cha
             const char* const str = va_arg(argp, const char* const);
             const u32 len = strlen(str) + 1;
             memcpy(message.ptr, str, sizeof(len));
-            message.ptr += ROUNDUP_4(len);
+            message.ptr += roundup_4(len);
             break;
         case MESSAGE_ARG_TYPE_ARRAY:
             const u32 arr_len = va_arg(argp, const u32);
@@ -212,16 +197,19 @@ static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const cha
             message.ptr += sizeof(arr_len);
             const void* const arr = va_arg(argp, const void* const);
             memcpy(message.ptr, arr, arr_len);
-            message.ptr += ROUNDUP_4(arr_len);
+            message.ptr += roundup_4(arr_len);
             break;
         case MESSAGE_ARG_TYPE_FD:
             /*
             TODO: Handle FDs
             wayland-book.com
-            "0-bit value on the primary transport, but transfers a file descriptor to the other end using the ancillary data in the Unix domain socket message (msg_control)."
+            "0-bit value on the primary transport, but transfers a file
+            descriptor to the other end using the ancillary data in the Unix
+            domain socket message (msg_control)."
 
             For now just increment the arg pointer
-            This will be needed for wl_shm::create_pool, wl_data_offer::recieve, wl_data_source::send, and wl_keyboard::keymap
+            This will be needed for wl_shm::create_pool, wl_data_offer::recieve,
+            wl_data_source::send, and wl_keyboard::keymap
             */
             va_arg(argp, i32);
             break;
@@ -229,13 +217,14 @@ static void send_message(DwlDisplay* display, Object* obj, u16 opcode, const cha
     }
     va_end(argp);
 
-    const usize bytes_written = write(display->sockfd, message.buf, message.head.length);
+    const usize bytes_written =
+        write(display->sockfd, message.buf, message.head.length);
     assert(bytes_written == message.head.length);
 
     message_destroy(&message);
 }
 
-static Message read_message(DwlDisplay* display) {
+Message display_read_message(DwlDisplay* display) {
     MessageHeader h;
     usize bytes_read = read(display->sockfd, &h, sizeof(h));
     assert(bytes_read == sizeof(h));
@@ -247,25 +236,17 @@ static Message read_message(DwlDisplay* display) {
     return m;
 }
 
-static bool get_registry(DwlDisplay* display, DwlDisplayError* err) {
-    (void)err;
-    display->registry.id = display->next_id++;
-
-    send_message(display, &display->parent, WL_DISPLAY_REQUEST_GET_REGISTRY, WL_DISPLAY_GET_REGISTRY_SIGNATURE, display->registry.id);
-
-    // TODO: read message and create array of objects, indexed by name
-
-    return true;
-}
+ID display_make_new_id(DwlDisplay* display) { return display->next_id++; }
 
 DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     DwlDisplay* display = malloc(sizeof(*display));
-    display->parent.id = WL_DISPLAY_OBJECT_ID;
+    display->id = WL_DISPLAY_OBJECT_ID;
     display->next_id = WL_DISPLAY_OBJECT_ID + 1;
 
     const char* wayland_sock = getenv("WAYLAND_SOCK");
     char* endp = nullptr;
-    display->sockfd = wayland_sock ? strtol(wayland_sock, &endp, 10) : create_socket(err);
+    display->sockfd =
+        wayland_sock ? strtol(wayland_sock, &endp, 10) : create_socket(err);
     if (display->sockfd < 0 || endp != 0)
         goto err_sock;
 
@@ -273,34 +254,19 @@ DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     if (display->epoll_fd < 0)
         goto err_epoll;
 
-    if (!get_registry(display, err))
+    if (!display_get_registry(display))
         goto err_registry;
 
-    // REMOVE: TEMP
-    {
-        struct epoll_event events[32];
-        i32 event_count;
-        event_count = epoll_wait(display->epoll_fd, events, 32, -1);
-        while (true) {
-            for (i32 i = 0; i < event_count; i++) {
-                const struct epoll_event ev = events[i];
-                if (ev.data.fd == display->sockfd) {
-                    Message m = read_message(display);
-                    const u32 name = message_read_u32(&m);
-                    const char* const interface = message_read_str(&m);
-                    const u32 version = message_read_u32(&m);
+    if (!display_get_compositor(display))
+        goto err_compositor;
 
-                    printf("Name: %u, Interface: %s (Version %u)\n", name, interface, version);
-                    
-                    message_destroy(&m);
-                }
-            }
-            if ((event_count = epoll_wait(display->epoll_fd, events, 32, 0)) == 0) break;
-        }
-    }
+    if (!display_get_shell(display))
+        goto err_compositor;
 
     return display;
 
+err_compositor:
+    display_destroy_registry(display);
 err_registry:
     close(display->epoll_fd);
 err_epoll:
@@ -311,6 +277,7 @@ err_sock:
 }
 
 void dwl_display_disconnect(DwlDisplay* display) {
+    display_destroy_registry(display);
     if (display->epoll_fd > 0)
         close(display->epoll_fd);
 

@@ -1,5 +1,5 @@
-#include "dwl/defines.h"
 #include "message.h"
+#include "dwl/defines.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -19,10 +19,8 @@ u32 message_read_u32(Message* m) {
 const char* message_read_str(Message* m) {
     const u32 len = message_read_u32(m);
     const char* str = (char*)m->ptr;
-    m->ptr += ROUNDUP_4(len);
+    m->ptr += roundup_4(len);
     return str;
 }
 
-void message_destroy(Message* m) {
-    free(m->buf);
-}
+void message_destroy(Message* m) { free(m->buf); }
