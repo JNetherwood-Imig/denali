@@ -1,6 +1,6 @@
 #pragma once
 
-#include "display_priv.h"
+#include "display.h"
 #include "dwl/window_core.h"
 
 typedef Object WlSurface;

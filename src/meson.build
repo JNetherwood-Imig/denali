@@ -1,5 +1,5 @@
 denali_srcs += files(
-  'list.c',
+  # 'list.c',
 
   'display.c',
   'message.c',

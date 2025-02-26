@@ -1,6 +1,6 @@
 #include "dwl/defines.h"
 #include "list.h"
-#include "window_priv.h"
+#include "window.h"
 
 #include <stdlib.h>
 
@@ -11,6 +11,9 @@ typedef struct Test {
 
 DwlWindow* dlw_window_create(DwlDisplay* display, DwlWindowType type,
                              DwlWindowError* err) {
+    (void)display;
+    (void)type;
+    (void)err;
     DwlWindow* window = malloc(sizeof(DwlWindow));
     return window;
 }

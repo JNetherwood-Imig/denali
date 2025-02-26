@@ -2,16 +2,22 @@
 
 // Vector(T) -> T*
 // vector_new(T) -> Vector(T),
+// vector_new_with_destructor(T, pfn_destroy) -> Vector(T)
 // vector_reserve(T, cap) -> Vector(T),
+// vector_reserve_with_destructor(T, cap, pfn_destroy) -> Vector(T)
 // vector_destroy(self) -> void
 // vector_size(self) -> size,
 // vector_capacity(self) -> capacity,
 // vector_grow(self) -> void,
 // vector_shrink_to_fit(self) -> void,
+// vector_get(self, index) -> elem
+// vector_set(self, idx, val) -> void
 // vector_front(self) -> first,
 // vector_back(self) -> last,
 // vector_begin(self) -> &first,
-// vector_end(self) -> &last
+// vector_end(self) -> &(last + 1)
+// vector_rbegin(self) -> &last
+// vector_rend(self) -> &(first - 1)
 // vector_insert(self, elem, idx) -> void,
 // vector_insert_range(self, ptr, count, idx) -> void,
 // vector_push_front(self, elem) -> void,
@@ -66,7 +72,7 @@
 typedef struct __VecHead {
     usize size;
     usize capacity;
-    void (*pfn_destroy)(void* elem);
+    void (*pfn_destroy)(void* elem_ptr);
 } __VecHead;
 
 #define __VEC_HEAD_SIZE sizeof(__VecHead)
@@ -134,18 +140,34 @@ typedef struct __VecHead {
         (self) = (typeof(self))__vec_from_head(new);                                \
     } while (false)
 
+#define vector_get(self, index)                                                     \
+    ({                                                                              \
+        __vec_assert((self) != nullptr && "cannot access element of null vector");  \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
+                     "get index out-of-bounds");                                    \
+        (self)[index];                                                              \
+    })
+
+#define vector_set(self, index, value)                                              \
+    ({                                                                              \
+        __vec_assert((self) != nullptr && "cannot set element of null vector");     \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
+                     "set index out-of-bounds");                                    \
+        (self)[index] = (value);                                                    \
+    })
+
 #define vector_front(self)                                                          \
     ({                                                                              \
         __vec_assert((self) != nullptr &&                                           \
                      "cannot access front element of null vector");                 \
-        (self)[0];                                                                  \
+        vector_get(self, 0);                                                        \
     })
 
 #define vector_back(self)                                                           \
     ({                                                                              \
         __vec_assert((self) != nullptr &&                                           \
                      "cannot access back element of null vector");                  \
-        (self)[vector_size(self) - 1];                                              \
+        vector_get(self, vector_size(self) - 1);                                    \
     })
 
 #define vector_begin(self)                                                          \
@@ -162,10 +184,14 @@ typedef struct __VecHead {
         (self) + vector_size(self);                                                 \
     })
 
-#define vector_insert(self, element, index)                                         \
+#define vector_rbegin(self) (vector_end(self) - 1)
+
+#define vector_rend(self) (vector_begin(self) - 1)
+
+#define vector_insert(self, index, element)                                         \
     do {                                                                            \
         __vec_assert((self) != nullptr && "cannot insert into null vector");        \
-        __vec_assert((index) >= 0 && (usize)(index) < vector_size(self) &&          \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
                      "insert index out-of-bounds");                                 \
         if (vector_size(self) + 1 > vector_capacity(self))                          \
             vector_grow(self);                                                      \
@@ -175,21 +201,21 @@ typedef struct __VecHead {
         ++vector_size(self);                                                        \
     } while (false)
 
-#define vector_insert_range(self, elements, count, index)                           \
+#define vector_insert_range(self, index, elements, count)                           \
     do {                                                                            \
         __vec_assert((self) != nullptr && "cannot insert range into null vector");  \
-        __vec_assert((index) >= 0 && (index) < vector_size(self) &&                 \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
                      "insert_range index out-of-bounds");                           \
         while (vector_size(self) + (count) > vector_capacity(self))                 \
             vector_grow(self);                                                      \
         __vec_memmove((self) + (index) + (count), (self) + (index),                 \
-                      (vector_size(self) - (index) - 1) * __vec_elem_size(self);    \
-        __vec_memcpy((self) + (index), (elements), (count) * __vec_elem_size(self); \
+                      (vector_size(self) - (index)) * __vec_elem_size(self));       \
+        __vec_memcpy((self) + (index), (elements),                                  \
+                     (count) * __vec_elem_size(self));                              \
         vector_size(self) += (count);                                               \
     } while (false)
 
-#define vector_push_front(self, element)\
-    vector_insert(self, element, 0)
+#define vector_push_front(self, element) vector_insert(self, element, 0)
 
 #define vector_push_range_front(self, elements, count)                              \
     vector_insert_range(self, elements, count, 0)
@@ -207,7 +233,7 @@ typedef struct __VecHead {
         __vec_assert((self) != nullptr && "cannot push range back to null vector"); \
         while (vector_size(self) + (count) > vector_capacity(self))                 \
             vector_grow(self);                                                      \
-        __vec_memcpy(vector_back(self), (elements),                                 \
+        __vec_memcpy(vector_end(self), (elements),                                  \
                      (count) * __vec_elem_size(self));                              \
         vector_size(self) += (count);                                               \
     } while (false)
@@ -215,7 +241,7 @@ typedef struct __VecHead {
 #define vector_pop(self, index)                                                     \
     ({                                                                              \
         __vec_assert((self) != nullptr && "cannot pop element from null vector");   \
-        __vec_assert((index) >= 0 && (index) < vector_size(self) &&                 \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
                      "pop index out-of-bounds");                                    \
         typeof((self)[0]) elem = (self)[index];                                     \
         __vec_memmove((self) + (index), (self) + (index) + 1,                       \
@@ -223,21 +249,20 @@ typedef struct __VecHead {
         elem;                                                                       \
     })
 
-#define vector_pop_front(self)\
-    vector_pop(self, 0)
+#define vector_pop_front(self) vector_pop(self, 0)
 
 #define vector_pop_back(self)                                                       \
     ({                                                                              \
         __vec_assert((self) != nullptr && "cannot pop element from null vector");   \
-        if (vector_size(self) < 1)                                                  \
-            break;                                                                  \
+        __vec_assert(vector_size(self) > 0 &&                                       \
+                     "cannot pop element from empty vector");                       \
         (self)[--vector_size(self)];                                                \
     })
 
 #define vector_erase(self, index)                                                   \
     do {                                                                            \
         __vec_assert((self) != nullptr && "cannot erase element from null vector"); \
-        __vec_assert((isize)(index) >= 0 && (index) < (isize)vector_size(self) &&   \
+        __vec_assert((usize)(index) < vector_size(self) &&                          \
                      "erase index out-of-bounds");                                  \
         __VecHead* head = __vec_head(self);                                         \
         if (head->pfn_destroy)                                                      \
@@ -246,8 +271,7 @@ typedef struct __VecHead {
                       (head->size-- - (index) - 1) * __vec_elem_size(self));        \
     } while (false)
 
-#define vector_erase_front(self)\
-    vector_erase(self, 0)
+#define vector_erase_front(self) vector_erase(self, 0)
 
 #define vector_erase_back(self)                                                     \
     do {                                                                            \
@@ -255,8 +279,9 @@ typedef struct __VecHead {
         if (vector_size(self) < 1)                                                  \
             break;                                                                  \
         __VecHead* head = __vec_head(self);                                         \
+        --head->size;                                                               \
         if (head->pfn_destroy)                                                      \
-            head->pfn_destroy((self) + --head->size);                               \
+            head->pfn_destroy((self) + (head->size));                               \
     } while (false)
 
 #define vector_erase_first_match(self, element)                                     \
@@ -265,8 +290,8 @@ typedef struct __VecHead {
                      "cannot erase_first_match from null vector");                  \
         isize match = -1;                                                           \
         do {                                                                        \
-            for (isize i = 0; i < (isize)vector_size(self); ++i) {                  \
-                if ((self)[i] == (element)) {                                       \
+            for (usize i = 0; i < vector_size(self); ++i) {                         \
+                if (vector_get(self, i) == (element)) {                             \
                     vector_erase(self, i);                                          \
                     match = i;                                                      \
                     break;                                                          \
@@ -291,10 +316,8 @@ typedef struct __VecHead {
 #define vector_clear(self)                                                          \
     do {                                                                            \
         __vec_assert((self) != nullptr && "cannot clear null vector");              \
-        if (vector_size(self) < 1)                                                  \
-            break;                                                                  \
         vector_erase_back(self);                                                    \
-    } while (vector_length(self) > 0)
+    } while (vector_size(self) > 0)
 
 #define vector_empty(self)                                                          \
     ({                                                                              \
@@ -302,12 +325,22 @@ typedef struct __VecHead {
         vector_size(self) == 0;                                                     \
     })
 
-#define vector_foreach(it_name, self)                                               \
-    for (typeof((self)[0]) it_name = vector_front(self),                            \
-                           *__vec_it = vector_begin(self);                          \
-         __vec_it != vector_end(self); ++__vec_it, it_name = *__vec_it)
+#define vector_foreach(elem, self)                                                  \
+    for (typeof((self)[0]) elem = vector_front(self),                               \
+                           *__##elem##_it = vector_begin(self);                     \
+         __##elem##_it != vector_end(self) ? ((elem = *__##elem##_it), true)        \
+                                           : false;                                 \
+         ++__##elem##_it)
 
-#define vector_foreach_r(it_name, self)                                             \
-    for (typeof((self)[0]) it_name = vector_back(self),                             \
-                           *__vec_it = vector_end(self) - 1;                        \
-         __vec_it != vector_begin(self) - 1; --__vec_it, it_name = *__vec_it)
+#define vector_foreach_r(elem, self)                                                \
+    for (typeof((self)[0]) elem = vector_back(self),                                \
+                           *__##elem##_it = vector_rbegin(self);                    \
+         __##elem##_it != vector_rend(self) && ((elem = *__##elem##_it) || true);   \
+         --__##elem##_it)
+
+#define vector_foreach_ref(elem, self)                                              \
+    for (typeof(self) elem = vector_begin(self); elem != vector_end(self); ++elem)
+#define vector_foreach_ref_r(elem, self)                                            \
+    for (typeof(self) elem = vector_rbegin(self); elem != vector_rend(self);        \
+         --elem)                                                                    \
+        ;

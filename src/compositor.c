@@ -1,6 +1,6 @@
-#include "display_priv.h"
+#include "display.h"
 #include "protocol.h"
-#include "window_priv.h"
+#include "window.h"
 
 #include <assert.h>
 
@@ -10,8 +10,7 @@ bool display_get_compositor(DwlDisplay* display) {
     assert(global != nullptr && "Failed to get wl_compositor global");
     // TODO: Don't just bind to implemented version without changing behavior
     // accordingly
-    display->compositor =
-        registry_get_object(&display->registry, global, global->version);
+    registry_init_object(&display->compositor, &display->registry, global, global->version);
 
     return true;
 }

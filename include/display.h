@@ -17,24 +17,24 @@ typedef struct RegistryGlobal {
     char interface[INTERFACE_MAX_LEN];
 } RegistryGlobal;
 
-struct DwlDisplay;
+typedef struct DwlDisplay DwlDisplay;
 typedef struct Registry {
     ID id;
     Vector(RegistryGlobal) globals;
-    struct DwlDisplay* display;
+    DwlDisplay* display;
 } Registry;
 
 typedef struct Object {
     ID id;
     RegistryGlobal global;
     u32 bound_version;
-    struct DwlDisplay* display;
+    DwlDisplay* display;
 } Object;
 
 typedef Object WlCompositor;
 typedef Object XdgWmBase;
 
-typedef struct DwlDisplay {
+struct DwlDisplay {
     ID id;
     ID next_id;
 
@@ -42,6 +42,12 @@ typedef struct DwlDisplay {
 
     WlCompositor compositor;
     XdgWmBase shell;
+    // seat
+    // keyboard
+    // pointer
+    // touch
+    // shm
+    // outputs (layoyt?)
 
     i32 sockfd;
     i32 epoll_fd;
@@ -49,7 +55,7 @@ typedef struct DwlDisplay {
     u8* buf;
     u8* buf_ptr;
     usize buf_capacity;
-} DwlDisplay;
+};
 
 void display_send_message(DwlDisplay* display, ID obj, u16 opcode,
                           const char* signature, ...);
@@ -60,13 +66,17 @@ ID display_make_new_id(DwlDisplay* display);
 
 bool display_get_registry(DwlDisplay* display);
 
-void display_destroy_registry(DwlDisplay* display);
-
-Object registry_get_object(Registry* registry, RegistryGlobal* global, u32 version);
-
-RegistryGlobal* registry_lookup_interface(Registry* registry,
-                                          const char* const interface);
-
 bool display_get_compositor(DwlDisplay* display);
 
 bool display_get_shell(DwlDisplay* display);
+
+void display_destroy_registry(DwlDisplay* display);
+
+Object* registry_create_object(Registry* registry, RegistryGlobal* global,
+                               u32 version);
+
+void registry_init_object(Object* object, Registry* registry, RegistryGlobal* global,
+                          u32 version);
+
+RegistryGlobal* registry_lookup_interface(Registry* registry,
+                                          const char* const interface);
