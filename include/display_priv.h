@@ -20,7 +20,7 @@ typedef struct RegistryGlobal {
 struct DwlDisplay;
 typedef struct Registry {
     ID id;
-    vector(RegistryGlobal) globals;
+    Vector(RegistryGlobal) globals;
     struct DwlDisplay* display;
 } Registry;
 

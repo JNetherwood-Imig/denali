@@ -1,4 +1,5 @@
 #include "message.h"
+#include "defines_priv.h"
 #include "dwl/defines.h"
 
 #include <stdarg.h>

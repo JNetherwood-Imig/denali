@@ -1,6 +1,6 @@
 #include "display_priv.h"
-#include "window_priv.h"
 #include "protocol.h"
+#include "window_priv.h"
 
 #include <assert.h>
 

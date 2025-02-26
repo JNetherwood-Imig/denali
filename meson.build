@@ -19,3 +19,4 @@ denali_lib = shared_library('denali', sources: denali_srcs, include_directories:
 denali_dep = declare_dependency(link_with: denali_lib, include_directories: denali_includes)
 
 subdir('examples')
+subdir('tests')

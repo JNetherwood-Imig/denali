@@ -30,7 +30,8 @@ bool display_get_registry(DwlDisplay* display) {
             strncpy(glob.interface, interface, sizeof(glob.interface));
 
             vector_push_back(display->registry.globals, glob);
-            printf("pushing to vector, length is now %zu\n", vector_size(display->registry.globals));
+            printf("pushing to vector, length is now %zu\n",
+                   vector_size(display->registry.globals));
 
             message_destroy(&m);
         }

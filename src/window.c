@@ -1,12 +1,12 @@
 #include "dwl/defines.h"
-#include "window_priv.h"
 #include "list.h"
+#include "window_priv.h"
 
 #include <stdlib.h>
 
 typedef struct Test {
-  i32 something;
-  ListNode link;
+    i32 something;
+    ListNode link;
 } Test;
 
 DwlWindow* dlw_window_create(DwlDisplay* display, DwlWindowType type,

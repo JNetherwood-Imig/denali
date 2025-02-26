@@ -1,3 +1,4 @@
+#include "defines_priv.h"
 #include "display_priv.h"
 #include "message.h"
 
