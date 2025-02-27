@@ -1,5 +1,5 @@
-#include "defines.h"
 #include "display.h"
+#include "defines.h"
 #include "message.h"
 
 #include <assert.h>
@@ -258,16 +258,12 @@ DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
     if (!display_get_registry(display))
         goto err_registry;
 
-    // if (!display_get_compositor(display))
-    //     goto err_compositor;
+    display_get_compositor(display);
 
-    // if (!display_get_shell(display))
-    //     goto err_compositor;
+    display_get_shell(display);
 
     return display;
 
-// err_compositor:
-//     display_destroy_registry(display);
 err_registry:
     close(display->epoll_fd);
 err_epoll:

@@ -1,6 +1,6 @@
+#include "window.h"
 #include "dwl/defines.h"
 #include "list.h"
-#include "window.h"
 
 #include <stdlib.h>
 

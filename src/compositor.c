@@ -10,7 +10,8 @@ bool display_get_compositor(DwlDisplay* display) {
     assert(global != nullptr && "Failed to get wl_compositor global");
     // TODO: Don't just bind to implemented version without changing behavior
     // accordingly
-    registry_init_object(&display->compositor, &display->registry, global, global->version);
+    registry_init_object(&display->compositor, &display->registry, global,
+                         global->version);
 
     return true;
 }

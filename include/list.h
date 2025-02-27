@@ -23,7 +23,13 @@ void list_remove(ListNode* node);
          (container) = field_parent_ptr((container)->link_field.next,               \
                                         typeof(*container), link_field))
 
-#define list_foreach_s()
+#define list_foreach_s(container, tmp, list, link_field)\
+    for ((container) = field_parent_ptr((list), typeof(*container), link_field),\
+         (tmp) = field_parent_ptr((list)->next, typeof(*container), link_field);    \
+         &(container)->link_field != (list);                                        \
+         (container) = (tmp);\
+         (tmp) = field_parent_ptr((container)->link_field.next,               \
+                                        typeof(*container), link_field))
 
 #define list_foreach_r()
 
