@@ -23,3 +23,9 @@
 - [ ] Logger
 	- Logs messages with 3-5 verbosity levels to a function pointer supplied by the
 	user, or the stderr if none is provided
+
+## Data Structures
+
+- [X] Vector
+- [X] Linked list
+- [ ] Protocol array
