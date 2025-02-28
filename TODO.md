@@ -27,5 +27,9 @@
 ## Data Structures
 
 - [X] Vector
+	- Purely macro-based c implementation which closely follows c++ std::vector
 - [X] Linked list
+	- Dually linked list which is basically just a wl_list
 - [ ] Protocol array
+	- Abstraction for marshalling arrays over the wire
+	- Potentially also regular array utils
