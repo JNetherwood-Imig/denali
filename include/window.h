@@ -1,7 +1,7 @@
 #pragma once
 
+#include "dwl/window.h"
 #include "display.h"
-#include "dwl/window_core.h"
 
 typedef Object WlSurface;
 typedef Object XdgSurface;

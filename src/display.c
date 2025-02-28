@@ -129,11 +129,10 @@ static i32 setup_epoll(const i32 display_fd, DwlDisplayError* err) {
 
 void display_send_message(DwlDisplay* display, ID id, u16 opcode,
                           const char* signature, ...) {
-    Message message = {};
-    message.head = (MessageHeader){
-        .length = sizeof(MessageHeader),
-        .obj_id = id,
-        .opcode = opcode,
+    Message message = {
+        .head.length = sizeof(MessageHeader),
+        .head.obj_id = id,
+        .head.opcode = opcode,
     };
 
     usize arg_count = strlen(signature);
@@ -225,16 +224,44 @@ void display_send_message(DwlDisplay* display, ID id, u16 opcode,
     message_destroy(&message);
 }
 
-Message display_read_message(DwlDisplay* display) {
+bool display_read_message(DwlDisplay* display, Message* m) {
     MessageHeader h;
     usize bytes_read = read(display->sockfd, &h, sizeof(h));
     assert(bytes_read == sizeof(h));
-    Message m = {.head = h};
-    m.buf = malloc(h.length - sizeof(h));
-    m.ptr = m.buf;
-    bytes_read = read(display->sockfd, m.buf, h.length - sizeof(h));
-    assert(bytes_read == h.length - sizeof(h));
-    return m;
+    m->head = h;
+    m->buf = malloc(h.length - sizeof(h));
+    m->ptr = m->buf;
+    bytes_read = read(display->sockfd, m->buf, h.length - sizeof(h));
+    return bytes_read == h.length - sizeof(h);
+}
+
+bool display_process_messages(DwlDisplay* display) {
+    Message m = {};
+    constexpr usize max_events = 1;
+    struct epoll_event events[max_events];
+    i32 event_count = epoll_wait(display->epoll_fd, events, max_events, -1);
+    while (event_count > 0) {
+        for (i32 i = 0; i < event_count; ++i) {
+            if (events[i].data.fd == display->sockfd) {
+                display_read_message(display, &m);
+                
+                switch (m.head.obj_id) {}
+
+                message_destroy(&m);
+                // const u32 name = message_read_u32(&m);
+                // const char* const interface = message_read_str(&m);
+                // const u32 version = message_read_u32(&m);
+
+                // RegistryGlobal glob = {.name = name, .version = version};
+                // strncpy(glob.interface, interface, sizeof(glob.interface));
+
+                // vector_push_back(display->registry.globals, glob);
+            }
+        }
+        event_count = epoll_wait(display->epoll_fd, events, max_events, 0);
+    }
+
+    return true;
 }
 
 ID display_make_new_id(DwlDisplay* display) { return display->next_id++; }
@@ -257,10 +284,6 @@ DwlDisplay* dwl_display_connect(DwlDisplayError* err) {
 
     if (!display_get_registry(display))
         goto err_registry;
-
-    display_get_compositor(display);
-
-    display_get_shell(display);
 
     return display;
 
